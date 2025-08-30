@@ -16,14 +16,17 @@
 			</view>
 		</view>
 		<view :style="[{padding:NavBar + 'px 10px 0px 10px'}]"></view>
-		
+
 		<form>
 			<view class="user-edit-header margin-top">
 				<image :src="avatar"></image>
 				<!--  #ifdef H5 || APP-PLUS -->
 				<!-- <text class="cu-btn bg-blue radius" @tap="showModal" data-target="DialogModal1">设置头像</text> -->
-				<text class="cu-btn bg-gradual-blue radius" @tap="toAvatar" >设置头像</text>
+				<text class="cu-btn bg-gradual-blue radius" @tap="toAvatar">设置头像</text>
 				<!--  #endif -->
+				<!-- #ifdef MP-WEIXIN -->
+				<button class="cu-btn bg-gradual-blue radius" open-type="chooseAvatar" @chooseavatar="avatarUpload"></button>
+				<!-- #endif -->
 			</view>
 			<view class="cu-form-group">
 				<view class="title">用户名</view>
@@ -44,7 +47,7 @@
 			</view>
 			<view class="cu-form-group align-start">
 				<view class="title">个人简介</view>
-				<textarea v-model="introduce"  placeholder="输入个人简介"></textarea>
+				<textarea v-model="introduce" placeholder="输入个人简介"></textarea>
 			</view>
 			<view class="cu-form-group margin-top">
 				<view class="title">密码</view>
@@ -100,13 +103,15 @@
 					</view>
 				</view>
 				<view class="padding-xl text-left">
-					<view>Gravatar是全球最大的头像库，属于Wordpress旗下。它广泛应用于国内外各类网站和程序，包括知名的Github。在Gravatar通过您的邮箱注册用户，并设置头像后，您在所有支持Gravatar的网站使用邮箱，都会显示您的头像。</view>
+					<view>
+						Gravatar是全球最大的头像库，属于Wordpress旗下。它广泛应用于国内外各类网站和程序，包括知名的Github。在Gravatar通过您的邮箱注册用户，并设置头像后，您在所有支持Gravatar的网站使用邮箱，都会显示您的头像。
+					</view>
 					<view>或者，您可以将将邮箱设置成QQ邮箱，将自动获取您的QQ头像。</view>
 				</view>
 				<view class="cu-bar bg-white justify-end">
 					<view class="action">
 						<button class="cu-btn bg-green margin-left" @tap="toGravatar">前往Gravatar</button>
-		
+
 					</view>
 				</view>
 			</view>
@@ -120,56 +125,61 @@
 </template>
 
 <script>
-	import { localStorage } from '../../js_sdk/mp-storage/mp-storage/index.js'
+	import {
+		localStorage
+	} from '../../js_sdk/mp-storage/mp-storage/index.js'
 	// #ifdef H5 || APP-PLUS 
-	import { pathToBase64, base64ToPath } from '../../js_sdk/mmmm-image-tools/index.js'
+	import {
+		pathToBase64,
+		base64ToPath
+	} from '../../js_sdk/mmmm-image-tools/index.js'
 	// #endif
 	export default {
 		data() {
 			return {
 				StatusBar: this.StatusBar,
 				CustomBar: this.CustomBar,
-				NavBar:this.StatusBar +  this.CustomBar,
-			AppStyle:this.$store.state.AppStyle,
-				
-				uid:0,
-				name:'',
-				screenName:'',
-				password:'',
-				repassword:'',
-				mail:'',
-				phone:"",
-				url:'',
-				avatar:"",
-				avatarNew:"",
-				introduce:"",
-				
+				NavBar: this.StatusBar + this.CustomBar,
+				AppStyle: this.$store.state.AppStyle,
+
+				uid: 0,
+				name: '',
+				screenName: '',
+				password: '',
+				repassword: '',
+				mail: '',
+				phone: "",
+				url: '',
+				avatar: "",
+				avatarNew: "",
+				introduce: "",
+
 				modalName: null,
-				
-				token:'',
-				styleIndex:"",
+
+				token: '',
+				styleIndex: "",
 			}
 		},
-		onPullDownRefresh(){
+		onPullDownRefresh() {
 			var that = this;
-			
+
 		},
-		onShow(){
+		onShow() {
 			var that = this;
 			// #ifdef APP-PLUS
-			
+
 			//plus.navigator.setStatusBarStyle("dark")
 			// #endif
-			
+
 			that.userStatus();
-			
-			if(localStorage.getItem('toAvatar')){
+
+			if (localStorage.getItem('toAvatar')) {
 				var toAvatar = JSON.parse(localStorage.getItem('toAvatar'));
 				that.avatarUpload(toAvatar.dataUrl);
-			}else{
+			} else {
 				console.log("没有头像缓存")
 			}
-			
+
 		},
 		onLoad() {
 			var that = this;
@@ -178,7 +188,7 @@
 			// #endif
 		},
 		methods: {
-			back(){
+			back() {
 				uni.navigateBack({
 					delta: 1
 				});
@@ -190,69 +200,70 @@
 				this.modalName = null
 			},
 			validatePassword(password) {
-			  const regex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[`~!@#$%^&*()_+<>?:"{},.\/\\;'[\]])[A-Za-z\d`~!@#$%^&*()_+<>?:"{},.\/\\;'[\]]{8,}$/;
-			  return regex.test(password);
+				const regex =
+					/^(?=.*[A-Za-z])(?=.*\d)(?=.*[`~!@#$%^&*()_+<>?:"{},.\/\\;'[\]])[A-Za-z\d`~!@#$%^&*()_+<>?:"{},.\/\\;'[\]]{8,}$/;
+				return regex.test(password);
 			},
 
 			userStatus() {
 				var that = this;
 				var token = "";
-				if(localStorage.getItem('userinfo')){
+				if (localStorage.getItem('userinfo')) {
 					var userInfo = JSON.parse(localStorage.getItem('userinfo'));
-					token=userInfo.token;
+					token = userInfo.token;
 				}
 				that.$Net.request({
-					
+
 					url: that.$API.userStatus(),
-					data:{
-						"token":token
+					data: {
+						"token": token
 					},
-					header:{
-						'Content-Type':'application/x-www-form-urlencoded'
+					header: {
+						'Content-Type': 'application/x-www-form-urlencoded'
 					},
 					method: "get",
 					dataType: 'json',
 					success: function(res) {
-						if(res.data.code==1){
-							that.uid=res.data.data.uid;
-							that.screenName=res.data.data.screenName;
-							that.name=res.data.data.name;
-							that.mail=res.data.data.mail;
-							that.url=res.data.data.url;
-							that.token=res.data.data.token;
-							that.avatar=res.data.data.avatar;
+						if (res.data.code == 1) {
+							that.uid = res.data.data.uid;
+							that.screenName = res.data.data.screenName;
+							that.name = res.data.data.name;
+							that.mail = res.data.data.mail;
+							that.url = res.data.data.url;
+							that.token = res.data.data.token;
+							that.avatar = res.data.data.avatar;
 							that.introduce = res.data.data.introduce;
 							that.phone = res.data.data.phone;
-							if(localStorage.getItem('userinfo')){
-								
+							if (localStorage.getItem('userinfo')) {
+
 								var userInfo = JSON.parse(localStorage.getItem('userinfo'));
-								if(userInfo.screenName){
+								if (userInfo.screenName) {
 									that.screenName = userInfo.screenName;
-								}else{
+								} else {
 									that.screenName = userInfo.name;
 								}
-								if(res.data.data.customize){
+								if (res.data.data.customize) {
 									userInfo.customize = res.data.data.customize;
 								}
-								if(res.data.data.lv){
+								if (res.data.data.lv) {
 									userInfo.lv = res.data.data.lv;
 								}
-								if(res.data.data.isvip){
+								if (res.data.data.isvip) {
 									userInfo.isvip = res.data.data.isvip;
 								}
-								if(res.data.data.vip){
+								if (res.data.data.vip) {
 									userInfo.vip = res.data.data.vip;
 								}
-								if(res.data.data.experience){
+								if (res.data.data.experience) {
 									userInfo.experience = res.data.data.experience;
 								}
-								localStorage.setItem('userinfo',JSON.stringify(userInfo));
+								localStorage.setItem('userinfo', JSON.stringify(userInfo));
 								// if(res.data.data.avatar){
 								// 	that.userInfo = res.data.data.avatar;
 								// }
-								
+
 							}
-							
+
 						}
 					},
 					fail: function(res) {
@@ -264,117 +275,117 @@
 				})
 			},
 			validateString(str) {
-			  // 判断是否包含空格或中文空格
-			  if (/\s|　/.test(str)) {
-			    return false;
-			  }
-			  // 判断是否只包含空格
-			  if (/^\s+$/.test(str)) {
-			    return false;
-			  }
-			  return true;
+				// 判断是否包含空格或中文空格
+				if (/\s|　/.test(str)) {
+					return false;
+				}
+				// 判断是否只包含空格
+				if (/^\s+$/.test(str)) {
+					return false;
+				}
+				return true;
 			},
 			userEdit() {
 				var that = this;
 				var token = "";
-				if(localStorage.getItem('userinfo')){
+				if (localStorage.getItem('userinfo')) {
 					var userInfo = JSON.parse(localStorage.getItem('userinfo'));
-					token=userInfo.token;
+					token = userInfo.token;
 				}
 				if (that.password != "") {
-					if(!that.validatePassword(that.password)){
+					if (!that.validatePassword(that.password)) {
 						uni.showToast({
-							title:"密码必须包含字母、数字和特殊符号，且长度必须大于8",
-							icon:'none',
+							title: "密码必须包含字母、数字和特殊符号，且长度必须大于8",
+							icon: 'none',
 							duration: 1000,
-							position:'bottom',
+							position: 'bottom',
 						});
 						return false
 					}
 					if (that.password != that.repassword) {
 						uni.showToast({
-						    title:"两次密码不一致",
-							icon:'none',
+							title: "两次密码不一致",
+							icon: 'none',
 							duration: 1000,
-							position:'bottom',
+							position: 'bottom',
 						});
 						return false
 					}
-					
+
 				}
-				if(that.isValidString(that.screenName)){
+				if (that.isValidString(that.screenName)) {
 					uni.showToast({
-					    title:"昵称不能包含空格",
-						icon:'none',
+						title: "昵称不能包含空格",
+						icon: 'none',
 						duration: 1000,
-						position:'bottom',
+						position: 'bottom',
 					});
 					return false
 				}
 				var data = {
-					uid:that.uid,
-					name:that.name,
-					screenName:that.screenName,
-					password:that.password,
-					introduce:that.introduce,
-					url:that.url,
+					uid: that.uid,
+					name: that.name,
+					screenName: that.screenName,
+					password: that.password,
+					introduce: that.introduce,
+					url: that.url,
 				}
-				if(that.avatarNew!=''){
+				if (that.avatarNew != '') {
 					data.avatar = that.avatarNew;
 				}
 				uni.showLoading({
 					title: "加载中"
 				});
 				that.$Net.request({
-					
+
 					url: that.$API.userEdit(),
-					data:{
-						"params":JSON.stringify(that.$API.removeObjectEmptyKey(data)),
-						"token":token
+					data: {
+						"params": JSON.stringify(that.$API.removeObjectEmptyKey(data)),
+						"token": token
 					},
-					header:{
-						'Content-Type':'application/x-www-form-urlencoded'
+					header: {
+						'Content-Type': 'application/x-www-form-urlencoded'
 					},
 					method: "get",
 					dataType: 'json',
 					success: function(res) {
 						//console.log(JSON.stringify(res))
-						setTimeout(function () {
+						setTimeout(function() {
 							uni.hideLoading();
 						}, 1000);
 						uni.showToast({
 							title: res.data.msg,
 							icon: 'none'
 						})
-						if(res.data.code==1){
+						if (res.data.code == 1) {
 							//保存用户信息
-							if(that.password!=""){
+							if (that.password != "") {
 								localStorage.removeItem('userinfo');
 								localStorage.removeItem('token');
 								var timer = setTimeout(function() {
 									var styleIndex = that.styleIndex;
 									uni.redirectTo({
-										url: '/pages/home/'+styleIndex
+										url: '/pages/home/' + styleIndex
 									});
 									clearTimeout('timer')
 								}, 1000)
-							}else{
+							} else {
 								var userInfo = JSON.parse(localStorage.getItem('userinfo'));
-								userInfo.screenName=that.screenName;
-								userInfo.url=that.url;
+								userInfo.screenName = that.screenName;
+								userInfo.url = that.url;
 								userInfo.introduce = that.introduce;
-								if(that.avatarNew!=''){
+								if (that.avatarNew != '') {
 									userInfo.avatar = that.avatarNew;
 								}
 								that.avatarNew = '';
-								localStorage.setItem('userinfo',JSON.stringify(userInfo));
+								localStorage.setItem('userinfo', JSON.stringify(userInfo));
 								//that.getCacheInfo();
 							}
-							
+
 						}
 					},
 					fail: function(res) {
-						setTimeout(function () {
+						setTimeout(function() {
 							uni.hideLoading();
 						}, 1000);
 						uni.showToast({
@@ -385,127 +396,130 @@
 					}
 				})
 			},
-			toEmail(){
+			toEmail() {
 				var that = this;
-				
+
 				uni.navigateTo({
-				    url: '/pages/user/mailedit'
+					url: '/pages/user/mailedit'
 				});
 			},
-			toAddress(){
+			toAddress() {
 				var that = this;
-				
+
 				uni.navigateTo({
-				    url: '/pages/user/address'
+					url: '/pages/user/address'
 				});
 			},
-			toPay(){
+			toPay() {
 				var that = this;
-				
+
 				uni.navigateTo({
-				    url: '/pages/user/pay'
+					url: '/pages/user/pay'
 				});
 			},
-			toBg(){
+			toBg() {
 				var that = this;
-				
+
 				uni.navigateTo({
-				    url: '/pages/user/userBg'
+					url: '/pages/user/userBg'
 				});
 			},
-			toBind(){
+			toBind() {
 				var that = this;
-				
+
 				uni.navigateTo({
-				    url: '/pages/user/userbind'
+					url: '/pages/user/userbind'
 				});
 			},
-			toGravatar(){
+			toGravatar() {
 				var that = this;
 				that.hideModal();
 				var url = "https://cn.gravatar.com/";
 				// #ifdef APP-PLUS
-				plus.runtime.openURL(url) 
+				plus.runtime.openURL(url)
 				// #endif
 				// #ifdef H5
 				window.open(url)
 				// #endif
 			},
-			toAvatar(){
+			toAvatar() {
 				// #ifdef APP-PLUS || H5
 				const that = this;
-				  uni.navigateTo({
+				uni.navigateTo({
 					url: "../../uni_modules/buuug7-img-cropper/pages/cropper",
 					events: {
-					  imgCropped(event) {
-						console.log(event);
-					  },
+						imgCropped(event) {
+							console.log(event);
+						},
 					},
-				  });
+				});
 				// #endif
 			},
-			avatarUpload(base64){
-				
+			uploadAvatarToSever(path) {
+				const uploadTask = uni.uploadFile({
+					url: that.$API.upload(),
+					filePath: path,
+					//  header: {
+					// "Content-Type": "multipart/form-data",
+					// },
+					name: 'file',
+					formData: {
+						'token': token
+					},
+					success: function(uploadFileRes) {
+						setTimeout(function() {
+							uni.hideLoading();
+						}, 1000);
+						var data = JSON.parse(uploadFileRes.data);
+						//var data = uploadFileRes.data;
+						if (data.code == 1) {
+							// uni.showToast({
+							// 	title: data.msg,
+							// 	icon: 'none'
+							// })
+							that.avatar = data.data.url;
+							that.avatarNew = data.data.url;
+							localStorage.removeItem('toAvatar');
+							that.userEdit();
+							//console.log(that.avatar)
+						} else {
+							uni.showToast({
+								title: "头像上传失败，请检查接口",
+								icon: 'none'
+							})
+						}
+					},
+					fail: function() {
+						setTimeout(function() {
+							uni.hideLoading();
+						}, 1000);
+					}
+				})
+			},
+			avatarUpload(data) {
 				var that = this;
 				var token = "";
-				if(localStorage.getItem('userinfo')){
+				if (localStorage.getItem('userinfo')) {
 					var userInfo = JSON.parse(localStorage.getItem('userinfo'));
-					token=userInfo.token;
+					token = userInfo.token;
+					token = userInfo.token;
 				}
-				base64ToPath(base64)
-				  .then(path => {
-					var file = path;
-					const uploadTask = uni.uploadFile({
-					  url : that.$API.upload(),
-					  filePath:file,
-					 //  header: {
-						// "Content-Type": "multipart/form-data",
-					 // },
-					  name: 'file',
-					  formData: {
-					   'token': token
-					  },
-					  success: function (uploadFileRes) {
-						  setTimeout(function () {
-						  	uni.hideLoading();
-						  }, 1000);
-						  
-							var data = JSON.parse(uploadFileRes.data);
-							//var data = uploadFileRes.data;
-							
-							
-							if(data.code==1){
-								// uni.showToast({
-								// 	title: data.msg,
-								// 	icon: 'none'
-								// })
-								that.avatar = data.data.url;
-								that.avatarNew = data.data.url;
-								localStorage.removeItem('toAvatar');
-								that.userEdit();
-								//console.log(that.avatar)
-								
-							}else{
-								uni.showToast({
-									title: "头像上传失败，请检查接口",
-									icon: 'none'
-								})
-							}
-						},fail:function(){
-							setTimeout(function () {
-								uni.hideLoading();
-							}, 1000);
-						}
-						
-					   
-					});
-				  })
-				  .catch(error => {
-					console.error("失败"+error)
-				  })
+				// #ifdef APP-PLUS || H5
+				base64ToPath(data)
+					.then(path => {
+						that.uploadAvatarToSever(path)
+					})
+					.catch(error => {
+						console.error("失败" + error)
+					})
+				// #endif
+				// #ifdef MP-WEIXIN
+				const path = data.detail.avatarUrl
+				that.uploadAvatarToSever(path)
+				// #endif
 			},
 			isValidString(str) {
-			  return /\s/g.test(str);
+				return /\s/g.test(str);
 			}
 		}
 	}
